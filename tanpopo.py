@@ -89,7 +89,7 @@ class AnimeViewer:
                     cover_label.image = cover_image_tk
                     cover_label.bind("<Enter>", lambda event, name=info.get("Title"): self.show_name(event, name))
                     cover_label.bind("<Leave>", self.hide_name)
-                    cover_label.bind("<Button-1>", lambda event, id=info.get("ID"): self.choose_episode(id))  # Added binding for mouse click
+                    cover_label.bind("<Button-1>", lambda event, id=info.get("ID"), anime_info=info: self.choose_episode(id, anime_info))
                     cover_label.bind("<Motion>", self.move_name)  # Added binding for mouse motion
                     cover_label.pack(side="left", padx=10)
             else:
@@ -110,11 +110,15 @@ class AnimeViewer:
         if hasattr(self, "name_label"):
             self.name_label.destroy()
 
-    def choose_episode(self, anime_id):
+    def choose_episode(self, anime_id, anime_info):
         # Create a new full-size window for choosing episodes
         episode_window = tk.Tk()
-        episode_window.title("Choose Episode")
+        episode_window_title = f"Choose Episode - {anime_id}"
+        episode_window.title(episode_window_title)
         episode_window.configure(bg="#121212")
+
+        # Pass the selected anime information to the episode selection window
+        # For demonstration, let's assume the anime_info parameter contains information about the selected anime
 
         # Get the screen width and height
         screen_width = episode_window.winfo_screenwidth()
