@@ -6,6 +6,8 @@ import json
 from PIL import Image, ImageTk
 from io import BytesIO
 from dotenv import load_dotenv
+import tkinter.filedialog
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -134,19 +136,29 @@ class AnimeViewer:
             with open("media_info.json", "w") as file:
                 json.dump([anime_info], file, indent=4)
 
+        # Check if series_locations.json exists, if not create an empty one
+        if not os.path.exists("series_locations.json"):
+            with open("series_locations.json", "w") as file:
+                json.dump({}, file)
+
+        # Function to open file explorer and select file location
+        def browse_file():
+            file_path = tkinter.filedialog.askdirectory()
+            if file_path:
+                # Save anime ID and file location in series_locations.json
+                with open("series_locations.json", "r+") as file:
+                    data = json.load(file)
+                    data[str(anime_id)] = file_path
+                    file.seek(0)
+                    json.dump(data, file, indent=4)
+
+        # Button to open file explorer
+        browse_button = tk.Button(episode_window, text="Select File Location", command=browse_file)
+        browse_button.pack(pady=10)
+
         # Create labels for episode information
         episode_label = tk.Label(episode_window, text="Choose an episode:", bg="#121212", fg="#FFFFFF", font=("Helvetica", 16))
         episode_label.pack(pady=10)
-
-        # Determine the number of episode options to display at a time
-        max_episodes_displayed = 5
-        episode_pages = (episode_count + max_episodes_displayed - 1) // max_episodes_displayed
-
-        # Function to handle episode selection
-        def play_episode():
-            selected_episode = episode_listbox.get(tk.ACTIVE)
-            print(f"Playing {selected_episode}")
-            # Add logic to play the selected episode
 
         # Create a Listbox for selecting episodes
         episode_listbox = tk.Listbox(episode_window, selectmode=tk.SINGLE, bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), width=30)
@@ -156,12 +168,34 @@ class AnimeViewer:
         for i in range(1, episode_count + 1):
             episode_listbox.insert(tk.END, f"Episode {i}")
 
-        # Create a scrollbar for navigating through episodes
-        scrollbar = ttk.Scrollbar(episode_window, orient="vertical", command=episode_listbox.yview)
-        scrollbar.pack(side="right", fill="y")
-
-        # Configure scrollbar to scroll Listbox
-        episode_listbox.config(yscrollcommand=scrollbar.set)
+        # Function to handle episode selection
+        def play_episode():
+            selected_episode_index = episode_listbox.curselection()
+            if selected_episode_index:
+                selected_episode = episode_listbox.get(selected_episode_index[0])
+                print(f"Searching for episode: {selected_episode}")
+                # Extract the episode number from the selected episode string
+                selected_episode_number = re.search(r'\d+', selected_episode).group()
+                print(f"Episode number extracted from selected episode: {selected_episode_number}")
+                # Search for the file in the selected file location
+                file_path = None
+                with open("series_locations.json", "r") as file:
+                    data = json.load(file)
+                    if str(anime_id) in data:
+                        directory = data[str(anime_id)]
+                        print(f"Searching in directory: {directory}")
+                        for file_name in os.listdir(directory):
+                            print(f"Checking file: {file_name}")
+                            # Extract the episode number from the filename
+                            file_episode_number = re.search(r'\d+', file_name).group()
+                            print(f"Episode number extracted from file: {file_episode_number}")
+                            if selected_episode_number == file_episode_number:
+                                file_path = os.path.join(directory, file_name)
+                                break
+                if file_path:
+                    print(f"Playing {selected_episode}: {file_path}")
+                else:
+                    print(f"Could not find {selected_episode} in the selected file location.")
 
         # Button to play the selected episode
         play_button = tk.Button(episode_window, text="Play Episode", command=play_episode)

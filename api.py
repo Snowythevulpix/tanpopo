@@ -84,53 +84,77 @@ def format_and_store_info(media_info, episode_count):
         print("Entry already exists in the JSON file. Skipping.")
 
 def get_media_list_collection(access_token, user_id):
-    query = f'''
-    query {{
-      MediaListCollection (userId: {user_id}, type: ANIME, status: CURRENT) {{
-        lists {{
-          entries {{
-            media {{
-              id
-              title {{
-                romaji
-              }}
-            }}
-          }}
-        }}
-      }}
-    }}
-    '''
+    def fetch_media_list(status):
+        query = '''
+        query ($userId: Int, $type: MediaType, $status: MediaListStatus) {
+          MediaListCollection (userId: $userId, type: $type, status: $status) {
+            lists {
+              entries {
+                media {
+                  id
+                  title {
+                    romaji
+                  }
+                }
+                status
+              }
+            }
+          }
+        }
+        '''
+
+        variables = {
+            'userId': user_id,
+            'type': 'ANIME',
+            'status': status
+        }
+
+        response = requests.post('https://graphql.anilist.co', json={'query': query, 'variables': variables}, headers=headers)
+
+        if response.status_code == 200:
+            data = response.json()
+            if 'errors' in data:
+                print("Error occurred:")
+                for error in data['errors']:
+                    print(error['message'])
+            else:
+                return data['data']['MediaListCollection']
+        else:
+            print(f"Request failed with status code {response.status_code}")
+            print(f"Response content: {response.content.decode('utf-8')}")
+            return None
 
     headers = {
         'Authorization': f'Bearer {access_token}'
     }
 
-    response = requests.post('https://graphql.anilist.co', json={'query': query}, headers=headers)
+    current_shows = fetch_media_list('CURRENT')
+    rewatched_shows = fetch_media_list('REPEATING')
 
-    if response.status_code == 200:
-        data = response.json()
-        if 'errors' in data:
-            print("Error occurred:")
-            for error in data['errors']:
-                print(error['message'])
-        else:
-            media_list_collection = data['data']['MediaListCollection']
-            return media_list_collection
+    if current_shows and rewatched_shows:
+        return current_shows, rewatched_shows
     else:
-        print(f"Request failed with status code {response.status_code}")
-        print(f"Response content: {response.content.decode('utf-8')}")
-        return None
+        return None, None
 
 # Fetch the AniList access token and user ID from the environment variables
 access_token = os.getenv('ANILIST_ACCESS_TOKEN')
 user_id = os.getenv('ANILIST_ID')
 
 if access_token and user_id:
-    media_list_collection = get_media_list_collection(access_token, user_id)
-    if media_list_collection:
+    current_shows, rewatched_shows = get_media_list_collection(access_token, user_id)
+    if current_shows and rewatched_shows:
         print("Media List Collection:")
         anime_ids = set()  # Using a set to store unique anime IDs
-        for media_list in media_list_collection['lists']:
+
+        for media_list in current_shows['lists']:
+            for entry in media_list.get('entries', []):
+                anime_id = entry['media']['id']
+                media_title = entry['media']['title']['romaji']
+                if anime_id not in anime_ids:  # Check if anime ID has not been printed before
+                    anime_ids.add(anime_id)  # Add anime ID to the set
+                    print(f"- ID: {anime_id}, Title: {media_title}")
+
+        for media_list in rewatched_shows['lists']:
             for entry in media_list.get('entries', []):
                 anime_id = entry['media']['id']
                 media_title = entry['media']['title']['romaji']
@@ -151,8 +175,10 @@ if access_token and user_id:
             print("Description:", info["description"])
             print("Cover Image:", info["coverImage"]["extraLarge"])
             print("\n")
-            
+
             # Store anime info in JSON file
             format_and_store_info(info, info["episodes"])
+    else:
+        print("No data retrieved for currently watching or rewatched shows.")
 else:
     print("AniList access token or user ID not found in the environment variables.")

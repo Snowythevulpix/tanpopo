@@ -1,3 +1,4 @@
 .env
 media_info.json
 __pycache__
+series_locations.json
