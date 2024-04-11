@@ -117,9 +117,6 @@ class AnimeViewer:
         episode_window.title(episode_window_title)
         episode_window.configure(bg="#121212")
 
-        # Pass the selected anime information to the episode selection window
-        # For demonstration, let's assume the anime_info parameter contains information about the selected anime
-
         # Get the screen width and height
         screen_width = episode_window.winfo_screenwidth()
         screen_height = episode_window.winfo_screenheight()
@@ -128,33 +125,43 @@ class AnimeViewer:
         episode_window.geometry(f"{screen_width}x{screen_height}+0+0")
 
         # Load episode information for the selected anime
-        # For demonstration, let's assume we have a dictionary of episodes
-        # where the keys are episode numbers and the values are episode titles
-        # Replace this with your actual episode information retrieval logic
-        episode_info = {
-            1: "Episode 1",
-            2: "Episode 2",
-            3: "Episode 3",
-            # Add more episodes as needed
-        }
+        episode_count = anime_info.get("EpisodeCount")
+        if episode_count is None:
+            # Prompt the user to enter the actual number of episodes
+            episode_count = int(input(f"Enter the number of episodes for {anime_info['Title']}: "))
+            anime_info["EpisodeCount"] = episode_count
+            # Update the JSON file with the new episode count
+            with open("media_info.json", "w") as file:
+                json.dump([anime_info], file, indent=4)
 
         # Create labels for episode information
         episode_label = tk.Label(episode_window, text="Choose an episode:", bg="#121212", fg="#FFFFFF", font=("Helvetica", 16))
         episode_label.pack(pady=10)
 
-        # Create a Combobox for selecting episodes
-        episode_var = tk.StringVar()
-        episode_combobox = ttk.Combobox(episode_window, textvariable=episode_var, values=list(episode_info.values()), state="readonly", width=30)
-        episode_combobox.pack(pady=10)
+        # Determine the number of episode options to display at a time
+        max_episodes_displayed = 5
+        episode_pages = (episode_count + max_episodes_displayed - 1) // max_episodes_displayed
 
         # Function to handle episode selection
         def play_episode():
-            selected_episode = episode_combobox.get()
-            for episode_num, episode_title in episode_info.items():
-                if episode_title == selected_episode:
-                    print(f"Playing {episode_title}")
-                    # Add logic to play the selected episode
-                    break
+            selected_episode = episode_listbox.get(tk.ACTIVE)
+            print(f"Playing {selected_episode}")
+            # Add logic to play the selected episode
+
+        # Create a Listbox for selecting episodes
+        episode_listbox = tk.Listbox(episode_window, selectmode=tk.SINGLE, bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), width=30)
+        episode_listbox.pack(pady=10, padx=10)
+
+        # Populate the Listbox with episode options
+        for i in range(1, episode_count + 1):
+            episode_listbox.insert(tk.END, f"Episode {i}")
+
+        # Create a scrollbar for navigating through episodes
+        scrollbar = ttk.Scrollbar(episode_window, orient="vertical", command=episode_listbox.yview)
+        scrollbar.pack(side="right", fill="y")
+
+        # Configure scrollbar to scroll Listbox
+        episode_listbox.config(yscrollcommand=scrollbar.set)
 
         # Button to play the selected episode
         play_button = tk.Button(episode_window, text="Play Episode", command=play_episode)
