@@ -53,7 +53,8 @@ def format_and_store_info(media_info, episode_count):
         "ID": media_info["id"],
         "Title": media_info["title"]["romaji"],
         "EpisodeCount": episode_count,
-        "CoverImage": media_info.get("coverImage", {}).get("extraLarge", "N/A")
+        "CoverImage": media_info.get("coverImage", {}).get("extraLarge", "N/A"),
+        "Description": media_info.get("description", "No description available")
     }
 
     filename = "media_info.json"
