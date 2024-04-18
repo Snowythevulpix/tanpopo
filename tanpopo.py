@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import ttk
 import os
 import requests
 import json
@@ -8,6 +7,7 @@ from io import BytesIO
 from dotenv import load_dotenv
 import tkinter.filedialog
 import re
+import subprocess
 
 # Load environment variables from .env file
 load_dotenv()
@@ -194,6 +194,15 @@ class AnimeViewer:
                                 break
                 if file_path:
                     print(f"Playing {selected_episode}: {file_path}")
+                    # Play the selected episode with MPV
+                    mpv_location = data.get("mpv_location")
+                    if mpv_location:
+                        try:
+                            subprocess.Popen([mpv_location, file_path])
+                        except FileNotFoundError:
+                            print("Error: MPV not found. Make sure it's installed and added to your PATH.")
+                    else:
+                        print("Error: MPV location not configured.")
                 else:
                     print(f"Could not find {selected_episode} in the selected file location.")
 
@@ -219,11 +228,6 @@ class HoverLabel(tk.Label):
 
 
 def main():
-    # Check if ANILIST_ACCESS_TOKEN exists in .env
-    if not os.getenv("ANILIST_ACCESS_TOKEN"):
-        # Run auth.py to acquire the access token
-        os.system("python auth.py")
-
     # Create the Tkinter root window
     root.state('zoomed')  # Set window state to maximized
     app = AnimeViewer(root)
