@@ -32,17 +32,21 @@ class AnimeViewer:
         self.frame = tk.Frame(self.master, width=barrier_width, height=barrier_height, bg="#121212")  # Set frame background color
         self.frame.place(x=barrier_size, y=barrier_size)
 
-        # Run api.py on load
-        self.run_api()
-
         # Display user's avatar and username
         self.display_user_info()
+
+        # Run api.py if media_info.json is empty
+        if os.path.getsize("media_info.json") == 0:
+            os.system("python api.py")
 
         # Display "Continue Watching" section
         self.display_continue_watching()
 
-    def run_api(self):
-        os.system("python api.py")
+
+
+        # Create a button to refresh Anilist data
+        self.button = tk.Button(self.master, text="Refresh Anilist", command=lambda: os.system("python api.py"))
+        self.button.pack(side="top", anchor="ne", pady=20, padx=20)
 
     def display_user_info(self):
         # Download user's avatar image
