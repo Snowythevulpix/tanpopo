@@ -156,26 +156,14 @@ class AnimeViewer:
         browse_button = tk.Button(episode_window, text="Select File Location", command=browse_file)
         browse_button.pack(pady=10)
 
-        # Create labels for episode information
-        episode_label = tk.Label(episode_window, text="Choose an episode:", bg="#121212", fg="#FFFFFF", font=("Helvetica", 16))
-        episode_label.pack(pady=10)
-
-        # Create a Listbox for selecting episodes
-        episode_listbox = tk.Listbox(episode_window, selectmode=tk.SINGLE, bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), width=30)
-        episode_listbox.pack(pady=10, padx=10)
-
-        # Populate the Listbox with episode options
-        for i in range(1, episode_count + 1):
-            episode_listbox.insert(tk.END, f"Episode {i}")
-
-        # Function to handle episode selection
+        # Function to handle episode selection and play
         def play_episode():
             selected_episode_index = episode_listbox.curselection()
             if selected_episode_index:
                 selected_episode = episode_listbox.get(selected_episode_index[0])
                 print(f"Searching for episode: {selected_episode}")
                 # Extract the episode number from the selected episode string
-                selected_episode_number = re.search(r'\d+', selected_episode).group()
+                selected_episode_number = int(re.search(r'\d+', selected_episode).group())  # Extract episode number and convert to integer
                 print(f"Episode number extracted from selected episode: {selected_episode_number}")
                 # Search for the file in the selected file location
                 file_path = None
@@ -187,12 +175,22 @@ class AnimeViewer:
                         for file_name in os.listdir(directory):
                             print(f"Checking file: {file_name}")
                             # Extract the episode number from the filename
-                            file_episode_number = re.search(r'\d+', file_name).group()
-                            print(f"Episode number extracted from file: {file_episode_number}")
-                            if selected_episode_number == file_episode_number:
-                                file_path = os.path.join(directory, file_name)
-                                break
-                if file_path:
+                            file_episode_number_match = re.search(r'\d+', file_name)
+                            if file_episode_number_match:
+                                file_episode_number = int(file_episode_number_match.group())  # Extract episode number and convert to integer
+                                print(f"Episode number extracted from file: {file_episode_number}")
+                                if selected_episode_number == file_episode_number:
+                                    file_path = os.path.join(directory, file_name)
+                                    print(f"File found: {file_path}")  # Print the file location
+                                    break
+                        if not file_path:
+                            print(f"Could not find Episode {selected_episode_number} in the selected file location.")
+                    else:
+                        print(f"No directory found for anime ID {anime_id} in series_locations.json.")
+
+                if file_path is None:
+                    print(f"Could not find Episode {selected_episode_number} in the selected file location.")
+                else:
                     print(f"Playing {selected_episode}: {file_path}")
                     # Play the selected episode with MPV
                     mpv_location = data.get("mpv_location")
@@ -203,8 +201,18 @@ class AnimeViewer:
                             print("Error: MPV not found. Make sure it's installed and added to your PATH.")
                     else:
                         print("Error: MPV location not configured.")
-                else:
-                    print(f"Could not find {selected_episode} in the selected file location.")
+
+        # Create labels for episode information
+        episode_label = tk.Label(episode_window, text="Choose an episode:", bg="#121212", fg="#FFFFFF", font=("Helvetica", 16))
+        episode_label.pack(pady=10)
+
+        # Create a Listbox for selecting episodes
+        episode_listbox = tk.Listbox(episode_window, selectmode=tk.SINGLE, bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), width=30)
+        episode_listbox.pack(pady=10, padx=10)
+
+        # Populate the Listbox with episode options
+        for i in range(1, episode_count + 1):
+            episode_listbox.insert(tk.END, f"Episode {i:02d}")  # Ensure double-digit episode numbers are formatted with leading zeros
 
         # Button to play the selected episode
         play_button = tk.Button(episode_window, text="Play Episode", command=play_episode)
