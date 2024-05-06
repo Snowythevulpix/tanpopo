@@ -42,6 +42,8 @@ class AnimeViewer:
         # Display "Continue Watching" section
         self.display_continue_watching()
 
+        version_text = tk.Label(root, text="ver 0.1.0", fg="#FFFFFF", bg="#121212")
+        version_text.place(relx=1.0, rely=1.0, anchor="se")
 
 
         # Create a button to refresh Anilist data
