@@ -2,6 +2,4 @@
 media_info.json
 __pycache__
 series_locations.json
-build/tanpopo
-dist
-tanpopo.spec
+psyducksprite.ico
