@@ -44,7 +44,7 @@ class AnimeViewer:
         # Display "Continue Watching" section
         self.display_continue_watching()
 
-        version_text = tk.Label(root, text="ver 0.0.1", fg="#FFFFFF", bg="#121212")
+        version_text = tk.Label(root, text="ver 0.0.2", fg="#FFFFFF", bg="#121212")
         version_text.place(relx=1.0, rely=1.0, anchor="se")
 
         # Create a button to refresh Anilist data
@@ -190,7 +190,7 @@ class AnimeViewer:
                 selected_episode = episode_listbox.get(selected_episode_index[0])
                 print(f"Searching for episode: {selected_episode}")
                 # Extract the episode number from the selected episode string
-                selected_episode_number = int(re.search(r'\d+', selected_episode).group())  # Extract episode number and convert to integer #type: ignore
+                selected_episode_number = int(re.search(r'\d+', selected_episode).group())  # type: ignore # Extract episode number and convert to integer
                 print(f"Episode number extracted from selected episode: {selected_episode_number}")
                 # Search for the file in the selected file location
                 file_path = None
@@ -251,6 +251,10 @@ class AnimeViewer:
         # Button to play the selected episode
         play_button = tk.Button(episode_window, text="Play Episode", command=play_episode)
         play_button.pack(pady=10)
+
+        # Display anime description in the top-right corner
+        description_label = tk.Label(episode_window, text=anime_info.get("Description", ""), bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), wraplength=screen_width//3)
+        description_label.place(relx=1.0, rely=0.0, anchor="ne")
 
         episode_window.mainloop()
 

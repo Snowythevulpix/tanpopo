@@ -6,6 +6,13 @@ import json
 # Load environment variables from .env file
 load_dotenv()
 
+# Function to clear the JSON file
+def clear_json_file(file_path):
+    with open(file_path, 'w') as f:
+        f.truncate(0)
+        print("Cleared JSON file.")
+
+# Function to fetch anime information from AniList
 def fetch_anime_info(anime_ids):
     base_url = "https://graphql.anilist.co"
     headers = {"Content-Type": "application/json"}
@@ -48,6 +55,7 @@ def fetch_anime_info(anime_ids):
 
     return anime_info
 
+# Function to format and store anime information in a JSON file
 def format_and_store_info(media_info, episode_count):
     formatted_info = {
         "ID": media_info["id"],
@@ -84,6 +92,7 @@ def format_and_store_info(media_info, episode_count):
     else:
         print("Entry already exists in the JSON file. Skipping.")
 
+# Function to retrieve media list collection from AniList
 def get_media_list_collection(access_token, user_id):
     def fetch_media_list(status):
         query = '''
@@ -144,41 +153,31 @@ user_id = os.getenv('ANILIST_ID')
 if access_token and user_id:
     current_shows, rewatched_shows = get_media_list_collection(access_token, user_id)
     if current_shows and rewatched_shows:
-        print("Media List Collection:")
+        # Clear the JSON file before refreshing it
+        clear_json_file("media_info.json")
+
+        # Proceed with fetching anime information and storing it in the JSON file
         anime_ids = set()  # Using a set to store unique anime IDs
 
         for media_list in current_shows['lists']:
             for entry in media_list.get('entries', []):
                 anime_id = entry['media']['id']
-                media_title = entry['media']['title']['romaji']
                 if anime_id not in anime_ids:  # Check if anime ID has not been printed before
                     anime_ids.add(anime_id)  # Add anime ID to the set
-                    print(f"- ID: {anime_id}, Title: {media_title}")
 
         for media_list in rewatched_shows['lists']:
             for entry in media_list.get('entries', []):
                 anime_id = entry['media']['id']
-                media_title = entry['media']['title']['romaji']
                 if anime_id not in anime_ids:  # Check if anime ID has not been printed before
                     anime_ids.add(anime_id)  # Add anime ID to the set
-                    print(f"- ID: {anime_id}, Title: {media_title}")
 
         # Fetch anime info for the collected IDs
         anime_info = fetch_anime_info(anime_ids)
         for info in anime_info:
-            print("Title (Romaji):", info["title"]["romaji"])
-            print("Title (English):", info["title"]["english"])
-            print("Title (Native):", info["title"]["native"])
-            print("Episodes:", info["episodes"])
-            print("Status:", info["status"])
-            print("Average Score:", info["averageScore"])
-            print("Genres:", ", ".join(info["genres"]))
-            print("Description:", info["description"])
-            print("Cover Image:", info["coverImage"]["extraLarge"])
-            print("\n")
-
             # Store anime info in JSON file
             format_and_store_info(info, info["episodes"])
+
+        print("AniList refresh successful.")
     else:
         print("No data retrieved for currently watching or rewatched shows.")
 else:
