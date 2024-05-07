@@ -42,8 +42,7 @@ class AnimeViewer:
         # Display "Continue Watching" section
         self.display_continue_watching()
 
-        version_text = tk.Label(root, text="ver 0.1.1", fg="#FFFFFF", bg="#121212")
-        version_text.place(relx=1.0, rely=1.0, anchor="se")
+
 
         # Create a button to refresh Anilist data
         self.button = tk.Button(self.master, text="Refresh Anilist", command=lambda: os.system("python api.py"))
@@ -118,47 +117,85 @@ class AnimeViewer:
             self.name_label.destroy()
 
     def choose_episode(self, anime_id, anime_info):
-        # Create a new window for choosing episodes
-        episode_window = tk.Toplevel(self.master)
-        episode_window.title(f"Choose Episode - {anime_id}")
-        episode_window.configure(bg="#121212")  # Set background color
+        # Create a new full-size window for choosing episodes
+        episode_window = tk.Tk()
+        episode_window_title = f"Choose Episode - {anime_id}"
+        episode_window.title(episode_window_title)
+        episode_window.configure(bg="#121212")
 
         # Get the screen width and height
-        screen_width = self.master.winfo_screenwidth()
-        screen_height = self.master.winfo_screenheight()
+        screen_width = episode_window.winfo_screenwidth()
+        screen_height = episode_window.winfo_screenheight()
 
         # Set the window size to match the screen size
         episode_window.geometry(f"{screen_width}x{screen_height}+0+0")
 
-        # Check if the folder path for the anime exists in series_locations.json
-        with open("series_locations.json", "r") as file:
-            data = json.load(file)
-            if str(anime_id) in data:
-                anime_folder = data[str(anime_id)]
-                # Scan the folder for available episodes
-                available_episodes = []
-                for file_name in os.listdir(anime_folder):
-                    # Extract the episode number from the filename
-                    file_episode_number_match = re.search(r'\d+', file_name)
-                    if file_episode_number_match:
-                        file_episode_number = int(file_episode_number_match.group())
-                        available_episodes.append(file_episode_number)
-                available_episodes.sort()  # Sort the episode numbers
-            else:
-                print(f"No directory found for anime ID {anime_id} in series_locations.json.")
-                episode_window.destroy()  # Close the window if folder path is not found
-                return
+        # Load episode information for the selected anime
+        episode_count = anime_info.get("EpisodeCount")
+        if episode_count is None:
+            # Prompt the user to enter the actual number of episodes
+            episode_count = int(input(f"Enter the number of episodes for {anime_info['Title']}: "))
+            anime_info["EpisodeCount"] = episode_count
+            # Update the JSON file with the new episode count
+            with open("media_info.json", "w") as file:
+                json.dump([anime_info], file, indent=4)
+
+        # Check if series_locations.json exists, if not create an empty one
+        if not os.path.exists("series_locations.json"):
+            with open("series_locations.json", "w") as file:
+                json.dump({}, file)
+
+        # Function to open file explorer and select file location
+        def browse_file():
+            file_path = tkinter.filedialog.askdirectory()
+            if file_path:
+                # Save anime ID and file location in series_locations.json
+                with open("series_locations.json", "r+") as file:
+                    data = json.load(file)
+                    data[str(anime_id)] = file_path
+                    file.seek(0)
+                    json.dump(data, file, indent=4)
+
+        # Button to open file explorer
+        browse_button = tk.Button(episode_window, text="Select File Location", command=browse_file)
+        browse_button.pack(pady=10)
 
         # Function to handle episode selection and play
         def play_episode():
             selected_episode_index = episode_listbox.curselection()
             if selected_episode_index:
                 selected_episode = episode_listbox.get(selected_episode_index[0])
-                print(f"Playing Episode {selected_episode}")
-                # Find the file path of the selected episode
-                file_path = os.path.join(anime_folder, f"Episode {selected_episode:02d}.mp4")  # Assuming the episodes are named like "Episode 01.mp4"
-                if os.path.exists(file_path):
-                    print(f"File found: {file_path}")  # Print the file location
+                print(f"Searching for episode: {selected_episode}")
+                # Extract the episode number from the selected episode string
+                selected_episode_number = int(re.search(r'\d+', selected_episode).group())  # Extract episode number and convert to integer
+                print(f"Episode number extracted from selected episode: {selected_episode_number}")
+                # Search for the file in the selected file location
+                file_path = None
+                with open("series_locations.json", "r") as file:
+                    data = json.load(file)
+                    if str(anime_id) in data:
+                        directory = data[str(anime_id)]
+                        print(f"Searching in directory: {directory}")
+                        for file_name in os.listdir(directory):
+                            print(f"Checking file: {file_name}")
+                            # Extract the episode number from the filename
+                            file_episode_number_match = re.search(r'\d+', file_name)
+                            if file_episode_number_match:
+                                file_episode_number = int(file_episode_number_match.group())  # Extract episode number and convert to integer
+                                print(f"Episode number extracted from file: {file_episode_number}")
+                                if selected_episode_number == file_episode_number:
+                                    file_path = os.path.join(directory, file_name)
+                                    print(f"File found: {file_path}")  # Print the file location
+                                    break
+                        if not file_path:
+                            print(f"Could not find Episode {selected_episode_number} in the selected file location.")
+                    else:
+                        print(f"No directory found for anime ID {anime_id} in series_locations.json.")
+
+                if file_path is None:
+                    print(f"Could not find Episode {selected_episode_number} in the selected file location.")
+                else:
+                    print(f"Playing {selected_episode}: {file_path}")
                     # Play the selected episode with MPV
                     mpv_location = data.get("mpv_location")
                     if mpv_location:
@@ -168,8 +205,6 @@ class AnimeViewer:
                             print("Error: MPV not found. Make sure it's installed and added to your PATH.")
                     else:
                         print("Error: MPV location not configured.")
-                else:
-                    print(f"File not found for Episode {selected_episode}")
 
         # Create labels for episode information
         episode_label = tk.Label(episode_window, text="Choose an episode:", bg="#121212", fg="#FFFFFF", font=("Helvetica", 16))
@@ -179,37 +214,16 @@ class AnimeViewer:
         episode_listbox = tk.Listbox(episode_window, selectmode=tk.SINGLE, bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), width=30)
         episode_listbox.pack(pady=10, padx=10)
 
-        # Populate the Listbox with available episode options
-        for episode_number in available_episodes:
-            episode_listbox.insert(tk.END, f"Episode {episode_number:02d}")  # Ensure double-digit episode numbers are formatted with leading zeros
+        # Populate the Listbox with episode options
+        for i in range(1, episode_count + 1):
+            episode_listbox.insert(tk.END, f"Episode {i:02d}")  # Ensure double-digit episode numbers are formatted with leading zeros
 
         # Button to play the selected episode
         play_button = tk.Button(episode_window, text="Play Episode", command=play_episode)
         play_button.pack(pady=10)
 
-        # Center the episode selection window
-        episode_window.update_idletasks()
-        episode_window.geometry(f"+{(screen_width - episode_window.winfo_width()) // 2}+{(screen_height - episode_window.winfo_height()) // 2}")
-
-        # Display the series location text
-        series_location_label = tk.Label(episode_window, text=f"Series Location: {anime_folder}", bg="#121212", fg="#FFFFFF", font=("Helvetica", 10))
-        series_location_label.pack(pady=10)
-
-        # Button to select series location
-        select_location_button = tk.Button(episode_window, text="Select Series Location", command=lambda: self.prompt_directory(anime_id))
-        select_location_button.pack(pady=10)
-
         episode_window.mainloop()
 
-    def prompt_directory(self, anime_id):
-        directory = tk.filedialog.askdirectory(title="Select Series Location")
-        if directory:
-            with open("series_locations.json", "r+") as file:
-                data = json.load(file)
-                data[str(anime_id)] = directory
-                file.seek(0)
-                json.dump(data, file, indent=4)
-                file.truncate()
 
 class HoverLabel(tk.Label):
     def __init__(self, master=None, **kwargs):
@@ -224,11 +238,13 @@ class HoverLabel(tk.Label):
     def on_leave(self, event):
         self.config(bg=self.default_bg)
 
+
 def main():
     # Create the Tkinter root window
     root.state('zoomed')  # Set window state to maximized
     app = AnimeViewer(root)
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
