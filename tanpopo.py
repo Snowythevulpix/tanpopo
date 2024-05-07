@@ -9,6 +9,8 @@ import tkinter.filedialog
 import re
 import subprocess
 
+print("loading Tanpopo... please wait")
+
 # Load environment variables from .env file
 load_dotenv()
 root = tk.Tk()
@@ -42,7 +44,8 @@ class AnimeViewer:
         # Display "Continue Watching" section
         self.display_continue_watching()
 
-
+    version_text = tk.Label(root, text="ver 0.0.1", fg="#FFFFFF", bg="#121212")
+    version_text.place(relx=1.0, rely=1.0, anchor="se")
 
         # Create a button to refresh Anilist data
         self.button = tk.Button(self.master, text="Refresh Anilist", command=lambda: os.system("python api.py"))
@@ -140,6 +143,9 @@ class AnimeViewer:
             with open("media_info.json", "w") as file:
                 json.dump([anime_info], file, indent=4)
 
+        # Get the file location from series_locations.json
+        directory = read_file_location(anime_id)
+
         # Check if series_locations.json exists, if not create an empty one
         if not os.path.exists("series_locations.json"):
             with open("series_locations.json", "w") as file:
@@ -156,9 +162,26 @@ class AnimeViewer:
                     file.seek(0)
                     json.dump(data, file, indent=4)
 
+                # Update the file location label
+                update_file_location()
+
+        # Function to update the file location label with the selected directory path
+        def update_file_location():
+            directory = read_file_location(anime_id)
+            if directory:
+                file_location_label.config(text=f"File Location: {directory}")
+
         # Button to open file explorer
         browse_button = tk.Button(episode_window, text="Select File Location", command=browse_file)
         browse_button.pack(pady=10)
+
+        # Create a Label to display the selected file location
+        file_location_label = tk.Label(episode_window, text="", bg="#121212", fg="#FFFFFF", font=("Helvetica", 10))
+        file_location_label.pack(pady=5)
+
+        # Button to update the file location label
+        update_location_button = tk.Button(episode_window, text="Display File Location", command=update_file_location)
+        update_location_button.pack(pady=5)
 
         # Function to handle episode selection and play
         def play_episode():
@@ -192,19 +215,19 @@ class AnimeViewer:
                     else:
                         print(f"No directory found for anime ID {anime_id} in series_locations.json.")
 
-                if file_path is None:
-                    print(f"Could not find Episode {selected_episode_number} in the selected file location.")
+            if file_path is None:
+                print(f"Could not find Episode {selected_episode_number} in the selected file location.")
+            else:
+                print(f"Playing {selected_episode}: {file_path}")
+                # Play the selected episode with MPV
+                mpv_location = data.get("mpv_location")
+                if mpv_location:
+                    try:
+                        subprocess.Popen([mpv_location, file_path])
+                    except FileNotFoundError:
+                        print("Error: MPV not found. Make sure it's installed and added to your PATH.")
                 else:
-                    print(f"Playing {selected_episode}: {file_path}")
-                    # Play the selected episode with MPV
-                    mpv_location = data.get("mpv_location")
-                    if mpv_location:
-                        try:
-                            subprocess.Popen([mpv_location, file_path])
-                        except FileNotFoundError:
-                            print("Error: MPV not found. Make sure it's installed and added to your PATH.")
-                    else:
-                        print("Error: MPV location not configured.")
+                    print("Error: MPV location not configured.")
 
         # Create labels for episode information
         episode_label = tk.Label(episode_window, text="Choose an episode:", bg="#121212", fg="#FFFFFF", font=("Helvetica", 16))
@@ -215,8 +238,15 @@ class AnimeViewer:
         episode_listbox.pack(pady=10, padx=10)
 
         # Populate the Listbox with episode options
-        for i in range(1, episode_count + 1):
-            episode_listbox.insert(tk.END, f"Episode {i:02d}")  # Ensure double-digit episode numbers are formatted with leading zeros
+        if directory:
+            # Get the list of episode files in the directory
+            episode_files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+            for episode_file in episode_files:
+                episode_number_match = re.search(r'\d+', episode_file)
+                if episode_number_match:
+                    episode_number = int(episode_number_match.group())
+                    if 1 <= episode_number <= episode_count:
+                        episode_listbox.insert(tk.END, f"Episode {episode_number:02d}")
 
         # Button to play the selected episode
         play_button = tk.Button(episode_window, text="Play Episode", command=play_episode)
@@ -237,6 +267,18 @@ class HoverLabel(tk.Label):
 
     def on_leave(self, event):
         self.config(bg=self.default_bg)
+
+
+# Create a new function to read the file location from series_locations.json
+def read_file_location(anime_id):
+    file_location = None
+    try:
+        with open("series_locations.json", "r") as file:
+            data = json.load(file)
+            file_location = data.get(str(anime_id))
+    except FileNotFoundError:
+        print("series_locations.json not found.")
+    return file_location
 
 
 def main():
