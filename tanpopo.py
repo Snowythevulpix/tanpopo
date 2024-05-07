@@ -55,9 +55,9 @@ class AnimeViewer:
             response = requests.get(avatar_url)
             if response.status_code == 200:
                 avatar_image = Image.open(BytesIO(response.content))
-                avatar_image = avatar_image.resize((100, 100), resample=Image.BILINEAR)  # Resize image if needed
+                avatar_image = avatar_image.resize((100, 100), resample=Image.BILINEAR)  # Resize image if needed #type: ignore
                 self.user_avatar = ImageTk.PhotoImage(avatar_image)
-                self.avatar_label = tk.Label(self.master, image=self.user_avatar, bg="#121212")  # Set label background color
+                self.avatar_label = tk.Label(self.master, image=self.user_avatar, bg="#121212")  # Set label background color #type: ignore
                 self.avatar_label.place(x=20, y=20)  # Position at top left corner
 
                 # Display username
@@ -87,12 +87,12 @@ class AnimeViewer:
                 response = requests.get(cover_url)
                 if response.status_code == 200:
                     cover_image = Image.open(BytesIO(response.content))
-                    cover_image = cover_image.resize((100, 150), resample=Image.BILINEAR)
+                    cover_image = cover_image.resize((100, 150), resample=Image.BILINEAR) #type: ignore
                     cover_image_tk = ImageTk.PhotoImage(cover_image)
 
                     # Create label for cover image
                     cover_label = HoverLabel(self.frame, image=cover_image_tk, bg="#121212")
-                    cover_label.image = cover_image_tk
+                    cover_label.image = cover_image_tk #type: ignore
                     cover_label.bind("<Enter>", lambda event, name=info.get("Title"): self.show_name(event, name))
                     cover_label.bind("<Leave>", self.hide_name)
                     cover_label.bind("<Button-1>", lambda event, id=info.get("ID"), anime_info=info: self.choose_episode(id, anime_info))
@@ -167,7 +167,7 @@ class AnimeViewer:
                 selected_episode = episode_listbox.get(selected_episode_index[0])
                 print(f"Searching for episode: {selected_episode}")
                 # Extract the episode number from the selected episode string
-                selected_episode_number = int(re.search(r'\d+', selected_episode).group())  # Extract episode number and convert to integer
+                selected_episode_number = int(re.search(r'\d+', selected_episode).group())  # Extract episode number and convert to integer #type: ignore
                 print(f"Episode number extracted from selected episode: {selected_episode_number}")
                 # Search for the file in the selected file location
                 file_path = None
