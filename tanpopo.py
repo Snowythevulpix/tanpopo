@@ -44,12 +44,33 @@ class AnimeViewer:
         # Display "Continue Watching" section
         self.display_continue_watching()
 
-        version_text = tk.Label(root, text="ver 0.0.2", fg="#FFFFFF", bg="#121212")
+        version_text = tk.Label(root, text="ver 0.0.3", fg="#FFFFFF", bg="#121212")
         version_text.place(relx=1.0, rely=1.0, anchor="se")
 
         # Create a button to refresh Anilist data
-        self.button = tk.Button(self.master, text="Refresh Anilist", command=lambda: os.system("python api.py"))
+        self.button = tk.Button(self.master, text="Refresh Anilist", command=self.refresh_anilist)
         self.button.pack(side="top", anchor="ne", pady=20, padx=20)
+
+    def refresh_anilist(self):
+        # Refresh Anilist data
+        os.system("python api.py")
+        
+        # Reopen the application
+        os.system("python tanpopo.py")
+        
+        # Close the current Tkinter window
+        self.master.destroy()
+        
+        
+    def refresh_anilist(self):
+        # Start the Anilist refresh process in a separate subprocess
+        subprocess.Popen(["python", "api.py"])
+        
+        # Close the current Tkinter window
+        self.master.destroy()
+        
+        # Reopen the application
+        subprocess.Popen(["python", "tanpopo.py"])
 
     def display_user_info(self):
         # Download user's avatar image

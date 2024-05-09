@@ -2,6 +2,7 @@ import os
 import requests
 from dotenv import load_dotenv
 import json
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -62,7 +63,7 @@ def format_and_store_info(media_info, episode_count):
         "Title": media_info["title"]["romaji"],
         "EpisodeCount": episode_count,
         "CoverImage": media_info.get("coverImage", {}).get("extraLarge", "N/A"),
-        "Description": media_info.get("description", "No description available")
+        "Description": filter_description(media_info.get("description", "No description available"))
     }
 
     filename = "media_info.json"
@@ -91,6 +92,12 @@ def format_and_store_info(media_info, episode_count):
         print("Formatted information stored successfully.")
     else:
         print("Entry already exists in the JSON file. Skipping.")
+
+# Function to filter out unwanted text from anime description
+def filter_description(description):
+    # Remove <br> tags and other HTML markup
+    filtered_description = re.sub(r'<.*?>', '', description)
+    return filtered_description
 
 # Function to retrieve media list collection from AniList
 def get_media_list_collection(access_token, user_id):
