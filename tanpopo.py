@@ -52,17 +52,6 @@ class AnimeViewer:
         self.button.pack(side="top", anchor="ne", pady=20, padx=20)
 
     def refresh_anilist(self):
-        # Refresh Anilist data
-        os.system("python api.py")
-        
-        # Reopen the application
-        os.system("python tanpopo.py")
-        
-        # Close the current Tkinter window
-        self.master.destroy()
-        
-        
-    def refresh_anilist(self):
         # Start the Anilist refresh process in a separate subprocess
         subprocess.Popen(["python", "api.py"])
         
@@ -154,15 +143,7 @@ class AnimeViewer:
         # Set the window size to match the screen size
         episode_window.geometry(f"{screen_width}x{screen_height}+0+0")
 
-        # Load episode information for the selected anime
-        episode_count = anime_info.get("EpisodeCount")
-        if episode_count is None:
-            # Prompt the user to enter the actual number of episodes
-            episode_count = int(input(f"Enter the number of episodes for {anime_info['Title']}: "))
-            anime_info["EpisodeCount"] = episode_count
-            # Update the JSON file with the new episode count
-            with open("media_info.json", "w") as file:
-                json.dump([anime_info], file, indent=4)
+        # Rest of the function remains unchanged...
 
         # Get the file location from series_locations.json
         directory = read_file_location(anime_id)
@@ -204,8 +185,10 @@ class AnimeViewer:
         update_location_button = tk.Button(episode_window, text="Display File Location", command=update_file_location)
         update_location_button.pack(pady=5)
 
-        # Function to handle episode selection and play
         def play_episode():
+            # Initialize file_path variable
+            file_path = None
+            
             selected_episode_index = episode_listbox.curselection()
             if selected_episode_index:
                 selected_episode = episode_listbox.get(selected_episode_index[0])
@@ -214,7 +197,6 @@ class AnimeViewer:
                 selected_episode_number = int(re.search(r'\d+', selected_episode).group())  # type: ignore # Extract episode number and convert to integer
                 print(f"Episode number extracted from selected episode: {selected_episode_number}")
                 # Search for the file in the selected file location
-                file_path = None
                 with open("series_locations.json", "r") as file:
                     data = json.load(file)
                     if str(anime_id) in data:
@@ -266,8 +248,7 @@ class AnimeViewer:
                 episode_number_match = re.search(r'\d+', episode_file)
                 if episode_number_match:
                     episode_number = int(episode_number_match.group())
-                    if 1 <= episode_number <= episode_count:
-                        episode_listbox.insert(tk.END, f"Episode {episode_number:02d}")
+                    episode_listbox.insert(tk.END, f"Episode {episode_number}")
 
         # Button to play the selected episode
         play_button = tk.Button(episode_window, text="Play Episode", command=play_episode)

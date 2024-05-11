@@ -30,7 +30,6 @@ def fetch_anime_info(anime_ids):
               english
               native
             }
-            episodes
             status
             averageScore
             genres
@@ -57,11 +56,10 @@ def fetch_anime_info(anime_ids):
     return anime_info
 
 # Function to format and store anime information in a JSON file
-def format_and_store_info(media_info, episode_count):
+def format_and_store_info(media_info):
     formatted_info = {
         "ID": media_info["id"],
         "Title": media_info["title"]["romaji"],
-        "EpisodeCount": episode_count,
         "CoverImage": media_info.get("coverImage", {}).get("extraLarge", "N/A"),
         "Description": filter_description(media_info.get("description", "No description available"))
     }
@@ -182,7 +180,7 @@ if access_token and user_id:
         anime_info = fetch_anime_info(anime_ids)
         for info in anime_info:
             # Store anime info in JSON file
-            format_and_store_info(info, info["episodes"])
+            format_and_store_info(info)
 
         print("AniList refresh successful.")
     else:
