@@ -44,7 +44,7 @@ class AnimeViewer:
         # Display "Continue Watching" section
         self.display_continue_watching()
 
-        version_text = tk.Label(root, text="ver 0.0.3", fg="#FFFFFF", bg="#121212")
+        version_text = tk.Label(root, text="ver 0.0.4", fg="#FFFFFF", bg="#121212")
         version_text.place(relx=1.0, rely=1.0, anchor="se")
 
         # Create a button to refresh Anilist data
@@ -129,6 +129,56 @@ class AnimeViewer:
         if hasattr(self, "name_label"):
             self.name_label.destroy()
 
+    def fetch_current_episode(self, username, anime_id):
+        query = '''
+        query ($username: String, $animeId: Int) {
+          Media(id: $animeId) {
+            title {
+              romaji
+            }
+            episodes
+          }
+          MediaListCollection(userName: $username, type: ANIME) {
+            lists {
+              entries {
+                mediaId
+                progress
+              }
+            }
+          }
+        }
+        '''
+        variables = {
+            'username': username,
+            'animeId': anime_id
+        }
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        }
+        try:
+            response = requests.post(
+                'https://graphql.anilist.co',
+                json={'query': query, 'variables': variables},
+                headers=headers
+            )
+            response.raise_for_status()
+            data = response.json()
+            if 'errors' in data:
+                print("AniList API Error:", data['errors'])
+                return None, None
+            media_info = data['data']['Media']
+            episodes = media_info.get('episodes', None)
+            lists = data['data']['MediaListCollection']['lists']
+            for lst in lists:
+                for entry in lst['entries']:
+                    if entry['mediaId'] == anime_id:
+                        return entry['progress'], episodes
+            return None, episodes
+        except requests.exceptions.RequestException as e:
+            print("Request error:", e)
+            return None, None
+
     def choose_episode(self, anime_id, anime_info):
         # Create a new full-size window for choosing episodes
         episode_window = tk.Tk()
@@ -142,8 +192,6 @@ class AnimeViewer:
 
         # Set the window size to match the screen size
         episode_window.geometry(f"{screen_width}x{screen_height}+0+0")
-
-        # Rest of the function remains unchanged...
 
         # Get the file location from series_locations.json
         directory = read_file_location(anime_id)
@@ -177,18 +225,21 @@ class AnimeViewer:
         browse_button = tk.Button(episode_window, text="Select File Location", command=browse_file)
         browse_button.pack(pady=10)
 
-        # Create a Label to display the selected file location
-        file_location_label = tk.Label(episode_window, text="", bg="#121212", fg="#FFFFFF", font=("Helvetica", 10))
+        # Label to display the selected file location
+        file_location_label = tk.Label(episode_window, text="", bg="#121212", fg="#FFFFFF")
         file_location_label.pack(pady=5)
 
-        # Button to update the file location label
+        # Initialize the file location
+        update_file_location()
+
+        # Button to display file location
         update_location_button = tk.Button(episode_window, text="Display File Location", command=update_file_location)
         update_location_button.pack(pady=5)
 
         def play_episode():
             # Initialize file_path variable
             file_path = None
-            
+
             selected_episode_index = episode_listbox.curselection()
             if selected_episode_index:
                 selected_episode = episode_listbox.get(selected_episode_index[0])
@@ -250,6 +301,21 @@ class AnimeViewer:
                     episode_number = int(episode_number_match.group())
                     episode_listbox.insert(tk.END, f"Episode {episode_number}")
 
+        # Fetch the current episode
+        anilist_username = os.getenv('ANILIST_USERNAME')
+        current_episode, total_episodes = self.fetch_current_episode(anilist_username, anime_id)
+        if current_episode is not None:
+            current_episode_label = tk.Label(episode_window, text=f"Current Episode: {current_episode}", bg="#121212", fg="#FFFFFF", font=("Helvetica", 12))
+            current_episode_label.pack(pady=10)
+
+        # Display total episodes
+        if total_episodes is not None:
+            total_episodes_label = tk.Label(episode_window, text=f"Total Episodes: {total_episodes}", bg="#121212", fg="#FFFFFF", font=("Helvetica", 12))
+            total_episodes_label.pack(pady=10)
+        else:
+            error_label = tk.Label(episode_window, text="Error fetching total episodes from AniList.", bg="#121212", fg="#FF0000", font=("Helvetica", 12))
+            error_label.pack(pady=10)
+
         # Button to play the selected episode
         play_button = tk.Button(episode_window, text="Play Episode", command=play_episode)
         play_button.pack(pady=10)
@@ -259,7 +325,6 @@ class AnimeViewer:
         description_label.place(relx=1.0, rely=0.0, anchor="ne")
 
         episode_window.mainloop()
-
 
 class HoverLabel(tk.Label):
     def __init__(self, master=None, **kwargs):
@@ -274,7 +339,6 @@ class HoverLabel(tk.Label):
     def on_leave(self, event):
         self.config(bg=self.default_bg)
 
-
 # Create a new function to read the file location from series_locations.json
 def read_file_location(anime_id):
     file_location = None
@@ -286,13 +350,11 @@ def read_file_location(anime_id):
         print("series_locations.json not found.")
     return file_location
 
-
 def main():
     # Create the Tkinter root window
     root.state('zoomed')  # Set window state to maximized
     app = AnimeViewer(root)
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()
