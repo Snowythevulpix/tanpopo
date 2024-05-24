@@ -9,11 +9,11 @@ import tkinter.filedialog
 import re
 import subprocess
 
+os.system("cls")
 print("loading Tanpopo... please wait")
 
 # Load environment variables from .env file
 load_dotenv()
-root = tk.Tk()
 
 class AnimeViewer:
     def __init__(self, master):
@@ -22,17 +22,17 @@ class AnimeViewer:
         self.master.configure(bg="#121212")  # Set background color to dark gray
 
         # Get screen width and height
-        screen_width = self.master.winfo_screenwidth()
-        screen_height = self.master.winfo_screenheight()
+        self.screen_width = self.master.winfo_screenwidth()
+        self.screen_height = self.master.winfo_screenheight()
 
         # Calculate the size of the barrier
         barrier_size = 50
-        barrier_width = screen_width - 2 * barrier_size
-        barrier_height = screen_height - 2 * barrier_size
+        barrier_width = self.screen_width - 2 * barrier_size
+        barrier_height = self.screen_height - 2 * barrier_size
 
-        # Create a frame to contain the image
-        self.frame = tk.Frame(self.master, width=barrier_width, height=barrier_height, bg="#121212")  # Set frame background color
-        self.frame.place(x=barrier_size, y=barrier_size)
+        # Create a frame to contain the main content
+        self.main_frame = tk.Frame(self.master, width=barrier_width, height=barrier_height, bg="#121212")  # Set frame background color
+        self.main_frame.place(x=barrier_size, y=barrier_size)
 
         # Display user's avatar and username
         self.display_user_info()
@@ -44,7 +44,7 @@ class AnimeViewer:
         # Display "Continue Watching" section
         self.display_continue_watching()
 
-        version_text = tk.Label(root, text="ver 0.0.4", fg="#FFFFFF", bg="#121212")
+        version_text = tk.Label(self.master, text="ver 0.0.5", fg="#FFFFFF", bg="#121212")
         version_text.place(relx=1.0, rely=1.0, anchor="se")
 
         # Create a button to refresh Anilist data
@@ -89,7 +89,7 @@ class AnimeViewer:
             return
 
         # Display "Continue Watching" header
-        continue_watching_label = tk.Label(self.frame, text="Continue Watching", bg="#121212", fg="#FFFFFF", font=("Helvetica", 25))
+        continue_watching_label = tk.Label(self.main_frame, text="Continue Watching", bg="#121212", fg="#FFFFFF", font=("Helvetica", 25))
         continue_watching_label.pack(pady=(50, 20), padx=(100, 100))  # Adjusted padx and pady here
 
         # Display cover images with hover effect and name display
@@ -104,7 +104,7 @@ class AnimeViewer:
                     cover_image_tk = ImageTk.PhotoImage(cover_image)
 
                     # Create label for cover image
-                    cover_label = HoverLabel(self.frame, image=cover_image_tk, bg="#121212")
+                    cover_label = HoverLabel(self.main_frame, image=cover_image_tk, bg="#121212")
                     cover_label.image = cover_image_tk #type: ignore
                     cover_label.bind("<Enter>", lambda event, name=info.get("Title"): self.show_name(event, name))
                     cover_label.bind("<Leave>", self.hide_name)
@@ -180,18 +180,11 @@ class AnimeViewer:
             return None, None
 
     def choose_episode(self, anime_id, anime_info):
-        # Create a new full-size window for choosing episodes
-        episode_window = tk.Tk()
-        episode_window_title = f"Choose Episode - {anime_id}"
-        episode_window.title(episode_window_title)
-        episode_window.configure(bg="#121212")
+        # Hide the main frame and create an episode frame
+        self.main_frame.pack_forget()
 
-        # Get the screen width and height
-        screen_width = episode_window.winfo_screenwidth()
-        screen_height = episode_window.winfo_screenheight()
-
-        # Set the window size to match the screen size
-        episode_window.geometry(f"{screen_width}x{screen_height}+0+0")
+        self.episode_frame = tk.Frame(self.master, bg="#121212")
+        self.episode_frame.pack(fill="both", expand=True)
 
         # Get the file location from series_locations.json
         directory = read_file_location(anime_id)
@@ -222,18 +215,18 @@ class AnimeViewer:
                 file_location_label.config(text=f"File Location: {directory}")
 
         # Button to open file explorer
-        browse_button = tk.Button(episode_window, text="Select File Location", command=browse_file)
+        browse_button = tk.Button(self.episode_frame, text="Select File Location", command=browse_file)
         browse_button.pack(pady=10)
 
         # Label to display the selected file location
-        file_location_label = tk.Label(episode_window, text="", bg="#121212", fg="#FFFFFF")
+        file_location_label = tk.Label(self.episode_frame, text="", bg="#121212", fg="#FFFFFF")
         file_location_label.pack(pady=5)
 
         # Initialize the file location
         update_file_location()
 
         # Button to display file location
-        update_location_button = tk.Button(episode_window, text="Display File Location", command=update_file_location)
+        update_location_button = tk.Button(self.episode_frame, text="Display File Location", command=update_file_location)
         update_location_button.pack(pady=5)
 
         def play_episode():
@@ -284,11 +277,11 @@ class AnimeViewer:
                     print("Error: MPV location not configured.")
 
         # Create labels for episode information
-        episode_label = tk.Label(episode_window, text="Choose an episode:", bg="#121212", fg="#FFFFFF", font=("Helvetica", 16))
+        episode_label = tk.Label(self.episode_frame, text="Choose an episode:", bg="#121212", fg="#FFFFFF", font=("Helvetica", 16))
         episode_label.pack(pady=10)
 
         # Create a Listbox for selecting episodes
-        episode_listbox = tk.Listbox(episode_window, selectmode=tk.SINGLE, bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), width=30)
+        episode_listbox = tk.Listbox(self.episode_frame, selectmode=tk.SINGLE, bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), width=30)
         episode_listbox.pack(pady=10, padx=10)
 
         # Populate the Listbox with episode options
@@ -305,26 +298,32 @@ class AnimeViewer:
         anilist_username = os.getenv('ANILIST_USERNAME')
         current_episode, total_episodes = self.fetch_current_episode(anilist_username, anime_id)
         if current_episode is not None:
-            current_episode_label = tk.Label(episode_window, text=f"Current Episode: {current_episode}", bg="#121212", fg="#FFFFFF", font=("Helvetica", 12))
+            current_episode_label = tk.Label(self.episode_frame, text=f"Current Episode: {current_episode}", bg="#121212", fg="#FFFFFF", font=("Helvetica", 12))
             current_episode_label.pack(pady=10)
 
         # Display total episodes
         if total_episodes is not None:
-            total_episodes_label = tk.Label(episode_window, text=f"Total Episodes: {total_episodes}", bg="#121212", fg="#FFFFFF", font=("Helvetica", 12))
+            total_episodes_label = tk.Label(self.episode_frame, text=f"Total Episodes: {total_episodes}", bg="#121212", fg="#FFFFFF", font=("Helvetica", 12))
             total_episodes_label.pack(pady=10)
         else:
-            error_label = tk.Label(episode_window, text="Error fetching total episodes from AniList.", bg="#121212", fg="#FF0000", font=("Helvetica", 12))
+            error_label = tk.Label(self.episode_frame, text="Error fetching total episodes from AniList.", bg="#121212", fg="#FF0000", font=("Helvetica", 12))
             error_label.pack(pady=10)
 
         # Button to play the selected episode
-        play_button = tk.Button(episode_window, text="Play Episode", command=play_episode)
+        play_button = tk.Button(self.episode_frame, text="Play Episode", command=play_episode)
         play_button.pack(pady=10)
 
         # Display anime description in the top-right corner
-        description_label = tk.Label(episode_window, text=anime_info.get("Description", ""), bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), wraplength=screen_width//3)
+        description_label = tk.Label(self.episode_frame, text=anime_info.get("Description", ""), bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), wraplength=300)
         description_label.place(relx=1.0, rely=0.0, anchor="ne")
 
-        episode_window.mainloop()
+        # Back button to return to the main frame
+        back_button = tk.Button(self.episode_frame, text="Back", command=self.show_main_frame)
+        back_button.pack(pady=10)
+
+    def show_main_frame(self):
+        self.episode_frame.pack_forget()
+        self.main_frame.pack(fill="both", expand=True)
 
 class HoverLabel(tk.Label):
     def __init__(self, master=None, **kwargs):
@@ -352,6 +351,7 @@ def read_file_location(anime_id):
 
 def main():
     # Create the Tkinter root window
+    root = tk.Tk()
     root.state('zoomed')  # Set window state to maximized
     app = AnimeViewer(root)
     root.mainloop()
