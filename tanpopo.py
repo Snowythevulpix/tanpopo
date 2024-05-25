@@ -44,16 +44,30 @@ class AnimeViewer:
         # Display "Continue Watching" section
         self.display_continue_watching()
 
-        version_text = tk.Label(self.master, text="ver 0.0.5", fg="#FFFFFF", bg="#121212")
+        version_text = tk.Label(self.master, text="ver 0.0.6", fg="#FFFFFF", bg="#121212")
         version_text.place(relx=1.0, rely=1.0, anchor="se")
 
-        # Create a button to refresh Anilist data
+        # Create a button to refresh anilist data
         self.button = tk.Button(self.master, text="Refresh Anilist", command=self.refresh_anilist)
         self.button.pack(side="top", anchor="ne", pady=20, padx=20)
 
     def refresh_anilist(self):
         # Start the Anilist refresh process in a separate subprocess
         subprocess.Popen(["python", "api.py"])
+        
+        # Close the current Tkinter window
+        self.master.destroy()
+        
+        # Reopen the application
+        subprocess.Popen(["python", "tanpopo.py"])
+
+        # Create a button to refresh authentication data
+        self.button = tk.Button(self.master, text="refresh authentication", command=self.refresh_authentication)
+        self.button.pack(side="top", anchor="ne", pady=20, padx=20)
+
+    def refresh_authentication(self):
+        # Start the authentication refresh process in a separate subprocess
+        subprocess.Popen(["python", "auth.py"])
         
         # Close the current Tkinter window
         self.master.destroy()
@@ -180,8 +194,9 @@ class AnimeViewer:
             return None, None
 
     def choose_episode(self, anime_id, anime_info):
-        # Hide the main frame and create an episode frame
         self.main_frame.pack_forget()
+        self.avatar_label.place_forget()  # Hide the avatar when choosing an episode
+        self.button.pack_forget()  # Hide the refresh button
 
         self.episode_frame = tk.Frame(self.master, bg="#121212")
         self.episode_frame.pack(fill="both", expand=True)
@@ -324,6 +339,7 @@ class AnimeViewer:
     def show_main_frame(self):
         self.episode_frame.pack_forget()
         self.main_frame.pack(fill="both", expand=True)
+        self.avatar_label.place(x=20, y=20)  # Display the avatar label again
 
 class HoverLabel(tk.Label):
     def __init__(self, master=None, **kwargs):
