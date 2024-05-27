@@ -75,6 +75,8 @@ class AnimeViewer:
         # Reopen the application
         subprocess.Popen(["python", "tanpopo.py"])
 
+
+
     def display_user_info(self):
         # Download user's avatar image
         avatar_url = os.getenv("ANILIST_AVATAR")
@@ -364,6 +366,7 @@ def read_file_location(anime_id):
     except FileNotFoundError:
         print("series_locations.json not found.")
     return file_location
+
 
 def main():
     # Create the Tkinter root window
