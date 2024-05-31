@@ -4,6 +4,7 @@ from urllib.parse import urlparse, parse_qs
 import webbrowser
 from dotenv import load_dotenv
 import tkinter as tk
+import subprocess
 
 # Load environment variables from .env file
 load_dotenv()
@@ -102,6 +103,8 @@ def main():
             access_token = exchange_code_for_token(authorization_code)
             if access_token:
                 print("Access token:", access_token)
+                subprocess.Popen(["python", "tanpopo.py"])
+
             else:
                 print("Authorization failed.")
             root.destroy()

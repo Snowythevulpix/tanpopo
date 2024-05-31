@@ -50,6 +50,10 @@ class AnimeViewer:
         # Create a button to refresh anilist data
         self.button = tk.Button(self.master, text="Refresh Anilist", command=self.refresh_anilist)
         self.button.pack(side="top", anchor="ne", pady=20, padx=20)
+        
+        # Create a button to refresh authentication data
+        self.auth_button = tk.Button(self.master, text="Refresh Authentication", command=self.refresh_authentication)
+        self.auth_button.pack(side="top", anchor="ne", pady=20, padx=20)
 
     def refresh_anilist(self):
         # Start the Anilist refresh process in a separate subprocess
@@ -61,20 +65,10 @@ class AnimeViewer:
         # Reopen the application
         subprocess.Popen(["python", "tanpopo.py"])
 
-        # Create a button to refresh authentication data
-        self.button = tk.Button(self.master, text="refresh authentication", command=self.refresh_authentication)
-        self.button.pack(side="top", anchor="ne", pady=20, padx=20)
-
     def refresh_authentication(self):
         # Start the authentication refresh process in a separate subprocess
         subprocess.Popen(["python", "auth.py"])
-        
-        # Close the current Tkinter window
         self.master.destroy()
-        
-        # Reopen the application
-        subprocess.Popen(["python", "tanpopo.py"])
-
 
 
     def display_user_info(self):
@@ -199,6 +193,7 @@ class AnimeViewer:
         self.main_frame.pack_forget()
         self.avatar_label.place_forget()  # Hide the avatar when choosing an episode
         self.button.pack_forget()  # Hide the refresh button
+        self.auth_button.pack_forget()  # Hide the authentication button
 
         self.episode_frame = tk.Frame(self.master, bg="#121212")
         self.episode_frame.pack(fill="both", expand=True)
@@ -342,6 +337,8 @@ class AnimeViewer:
         self.episode_frame.pack_forget()
         self.main_frame.pack(fill="both", expand=True)
         self.avatar_label.place(x=20, y=20)  # Display the avatar label again
+        self.button.pack(side="top", anchor="ne", pady=20, padx=20)  # Display the refresh button again
+        self.auth_button.pack(side="top", anchor="ne", pady=20, padx=20)  # Display the authentication button again
 
 class HoverLabel(tk.Label):
     def __init__(self, master=None, **kwargs):
