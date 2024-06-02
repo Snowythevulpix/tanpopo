@@ -55,6 +55,17 @@ def fetch_anime_info(anime_ids):
 
     return anime_info
 
+# Function to filter out unwanted text from anime description
+def filter_description(description):
+    # Remove <br> tags and other HTML markup
+    filtered_description = re.sub(r'<.*?>', '', description)
+    return filtered_description
+
+# Function to rearrange data alphabetically by anime title
+def sort_data_alphabetically(data):
+    sorted_data = sorted(data, key=lambda x: x['Title'])
+    return sorted_data
+
 # Function to format and store anime information in a JSON file
 def format_and_store_info(media_info):
     formatted_info = {
@@ -83,19 +94,16 @@ def format_and_store_info(media_info):
     if not entry_exists:
         data.append(formatted_info)
 
+        # Sort data alphabetically
+        sorted_data = sort_data_alphabetically(data)
+
         # Write the updated data back to the JSON file
         with open(filename, "w") as file:
-            json.dump(data, file, indent=4)
+            json.dump(sorted_data, file, indent=4)
 
         print("Formatted information stored successfully.")
     else:
         print("Entry already exists in the JSON file. Skipping.")
-
-# Function to filter out unwanted text from anime description
-def filter_description(description):
-    # Remove <br> tags and other HTML markup
-    filtered_description = re.sub(r'<.*?>', '', description)
-    return filtered_description
 
 # Function to retrieve media list collection from AniList
 def get_media_list_collection(access_token, user_id):
