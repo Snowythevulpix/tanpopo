@@ -54,6 +54,25 @@ class AnimeViewer:
         # Create a button to refresh authentication data
         self.auth_button = tk.Button(self.master, text="Refresh Authentication", command=self.refresh_authentication)
         self.auth_button.pack(side="top", anchor="ne", pady=20, padx=20)
+        
+        # Create a button to set MPV location
+        self.auth_button = tk.Button(self.master, text="Set MPV location", command=self.mpv_set)
+        self.auth_button.pack(side="top", anchor="ne", pady=20, padx=20)
+
+    def mpv_set(self):
+        file_path = tkinter.filedialog.askopenfilename(filetypes=[("Executable files", "*.exe")])
+        if file_path:
+            # Check if series_locations.json exists, if not create an empty one
+            if not os.path.exists("series_locations.json"):
+                with open("series_locations.json", "w") as file:
+                    json.dump({}, file)
+
+            # Save mpv_location in series_locations.json
+            with open("series_locations.json", "r+") as file:
+                data = json.load(file)
+                data["mpv_location"] = file_path
+                file.seek(0)
+                json.dump(data, file, indent=4)
 
     def refresh_anilist(self):
         # Start the Anilist refresh process in a separate subprocess
