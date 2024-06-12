@@ -62,13 +62,13 @@ class AnimeViewer:
     def mpv_set(self):
         file_path = tkinter.filedialog.askopenfilename(filetypes=[("Executable files", "*.exe")])
         if file_path:
-            # Check if series_locations.json exists, if not create an empty one
-            if not os.path.exists("series_locations.json"):
-                with open("series_locations.json", "w") as file:
+            # Check if prefrences.json exists, if not create an empty one
+            if not os.path.exists("prefrences.json"):
+                with open("prefrences.json", "w") as file:
                     json.dump({}, file)
 
-            # Save mpv_location in series_locations.json
-            with open("series_locations.json", "r+") as file:
+            # Save mpv_location in prefrences.json
+            with open("prefrences.json", "r+") as file:
                 data = json.load(file)
                 data["mpv_location"] = file_path
                 file.seek(0)
