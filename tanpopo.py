@@ -12,6 +12,22 @@ import subprocess
 os.system("cls")
 print("loading Tanpopo... please wait")
 
+def check_and_create_files():
+    files_to_create = ["media_info.json", "series_locations.json", "preferences.json"]
+
+    for file_name in files_to_create:
+        if not os.path.exists(file_name):
+            # Create the file
+            with open(file_name, "w") as file:
+                # If it's preferences.json, create an empty dictionary
+                if file_name == "preferences.json":
+                    json.dump({}, file)
+                # Otherwise, create an empty list
+                else:
+                    json.dump([], file)
+
+check_and_create_files()
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -62,13 +78,13 @@ class AnimeViewer:
     def mpv_set(self):
         file_path = tkinter.filedialog.askopenfilename(filetypes=[("Executable files", "*.exe")])
         if file_path:
-            # Check if prefrences.json exists, if not create an empty one
-            if not os.path.exists("prefrences.json"):
-                with open("prefrences.json", "w") as file:
+            # Check if preferences.json exists, if not create an empty one
+            if not os.path.exists("preferences.json"):
+                with open("preferences.json", "w") as file:
                     json.dump({}, file)
 
-            # Save mpv_location in prefrences.json
-            with open("prefrences.json", "r+") as file:
+            # Save mpv_location in preferences.json
+            with open("preferences.json", "r+") as file:
                 data = json.load(file)
                 data["mpv_location"] = file_path
                 file.seek(0)
