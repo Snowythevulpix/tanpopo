@@ -61,16 +61,20 @@ def filter_description(description):
     filtered_description = re.sub(r'<.*?>', '', description)
     return filtered_description
 
-# Function to rearrange data alphabetically by anime title
+# Function to rearrange data alphabetically by anime title (Romaji)
 def sort_data_alphabetically(data):
-    sorted_data = sorted(data, key=lambda x: x['Title'])
+    sorted_data = sorted(data, key=lambda x: x['Titles']['Romaji'])
     return sorted_data
 
 # Function to format and store anime information in a JSON file
 def format_and_store_info(media_info):
     formatted_info = {
         "ID": media_info["id"],
-        "Title": media_info["title"]["romaji"],
+        "Titles": {
+            "Romaji": media_info["title"]["romaji"],
+            "English": media_info["title"]["english"],
+            "Native": media_info["title"]["native"]
+        },
         "CoverImage": media_info.get("coverImage", {}).get("extraLarge", "N/A"),
         "Description": filter_description(media_info.get("description", "No description available"))
     }

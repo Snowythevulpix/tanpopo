@@ -135,7 +135,7 @@ class AnimeViewer:
                     # Create label for cover image
                     cover_label = HoverLabel(self.main_frame, image=cover_image_tk, bg="#121212")
                     cover_label.image = cover_image_tk #type: ignore
-                    cover_label.bind("<Enter>", lambda event, name=info.get("Title"): self.show_name(event, name))
+                    cover_label.bind("<Enter>", lambda event, name=info["Titles"].get("Romaji"): self.show_name(event, name))
                     cover_label.bind("<Leave>", self.hide_name)
                     cover_label.bind("<Button-1>", lambda event, id=info.get("ID"), anime_info=info: self.choose_episode(id, anime_info))
                     cover_label.bind("<Motion>", self.move_name)  # Added binding for mouse motion
@@ -163,7 +163,7 @@ class AnimeViewer:
         query ($username: String, $animeId: Int) {
           Media(id: $animeId) {
             title {
-              romaji
+              english
             }
             episodes
           }
@@ -353,11 +353,11 @@ class AnimeViewer:
         back_button.pack(pady=10)
 
     def show_main_frame(self):
-        self.episode_frame.pack_forget()
-        self.main_frame.pack(fill="both", expand=True)
-        self.avatar_label.place(x=20, y=20)  # Display the avatar label again
-        self.button.pack(side="top", anchor="ne", pady=20, padx=20)  # Display the refresh button again
-        self.auth_button.pack(side="top", anchor="ne", pady=20, padx=20)  # Display the authentication button again
+     self.episode_frame.pack_forget()
+     self.main_frame.pack(fill="both", expand=True)
+     self.avatar_label.place(x=20, y=20)  # Display the avatar label again
+     self.button.pack(side="top", anchor="ne", pady=20, padx=20)  # Ensure the refresh button is packed at the correct position
+     self.auth_button.pack(side="top", anchor="ne", pady=20, padx=20)  # Ensure the authentication button is packed at the correct position
 
 class HoverLabel(tk.Label):
     def __init__(self, master=None, **kwargs):
