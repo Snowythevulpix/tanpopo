@@ -14,6 +14,7 @@ CLIENT_ID = '17593'
 CLIENT_SECRET = '5FLMx3yxCAmHqjMCwkb2QTWKqZ2DFBqCOLZxM5iC'
 REDIRECT_URI = 'https://ninestails.xyz/auth.html'
 
+
 # Step 2: Redirect user to AniList's authorization page
 def get_authorization_code():
     auth_url = 'https://anilist.co/api/v2/oauth/authorize'
@@ -23,6 +24,7 @@ def get_authorization_code():
         'response_type': 'code'  # Use 'code' for Authorization Code Grant flow
     }
     webbrowser.open_new(auth_url + '?' + '&'.join([f'{key}={value}' for key, value in params.items()]))
+
 
 # Step 3: Exchange authorization code for access token
 def exchange_code_for_token(authorization_code):
@@ -58,6 +60,7 @@ def exchange_code_for_token(authorization_code):
         print("Failed to exchange authorization code for access token.")
         return None
 
+
 # Step 4: Fetch user information using access token
 def get_user_info(access_token):
     user_info_url = 'https://graphql.anilist.co'
@@ -82,6 +85,7 @@ def get_user_info(access_token):
         print("Failed to fetch user info.")
         return None
 
+
 # Main function
 def main():
     # Ensure .env file exists or create it if not
@@ -100,7 +104,7 @@ def main():
     def submit_authorization_code():
         authorization_code = entry.get()
         if authorization_code:
-            access_token = exchange_code_for_token(authorization_code)
+            access_token = exchange_code_for_token(authorization_code.strip())
             if access_token:
                 print("Access token:", access_token)
                 subprocess.Popen(["python", "tanpopo.py"])
@@ -124,6 +128,7 @@ def main():
     submit_button.pack()
 
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
