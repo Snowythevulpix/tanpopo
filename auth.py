@@ -12,7 +12,7 @@ load_dotenv()
 # Step 1: Register your application and obtain client credentials
 CLIENT_ID = '17593'
 CLIENT_SECRET = '5FLMx3yxCAmHqjMCwkb2QTWKqZ2DFBqCOLZxM5iC'
-REDIRECT_URI = 'https://ninestails.pagostunes.xyz/auth.html'
+REDIRECT_URI = 'https://ninestails.xyz/auth.html'
 
 # Step 2: Redirect user to AniList's authorization page
 def get_authorization_code():
