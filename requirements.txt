@@ -2,3 +2,5 @@ tk
 requests
 pillow
 python-dotenv
+customtkinter
+CTkMenuBar
