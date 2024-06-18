@@ -9,47 +9,19 @@ import tkinter.filedialog
 import re
 import subprocess
 
+#--------------- Sub-Folder Imports
+from sub.mpv import *
+from sub.check_and_create_files import *
+
+
 os.system("cls")
 print("loading Tanpopo... please wait")
 
-def check_and_create_files():
-    files_to_create = ["media_info.json", "series_locations.json", "preferences.json", ".env"]
-
-    for file_name in files_to_create:
-        if not os.path.exists(file_name):
-            # Create the file
-            with open(file_name, "w") as file:
-                # If it's preferences.json, create an empty dictionary
-                if file_name == "preferences.json":
-                    json.dump({}, file)
-                # Otherwise, create an empty list
-                elif file_name == ".env":
-                    # Do not write anything to .env, just create the empty file
-                    pass
-                else:
-                    json.dump([], file)
-
-    # Check if .env file is empty
-    env_file = '.env'
-    
-    if os.path.exists(env_file):
-        with open(env_file, 'r') as file:
-            content = file.read().strip()
-            
-        if not content:
-            print(".env is empty, running auth.py")
-            # Execute auth.py
-            os.system('python auth.py')
-        else:
-            print(".env is not empty, skipping auth.py")
-    else:
-        print(".env file does not exist")
 
 check_and_create_files()
 
 # Load environment variables from .env file
 load_dotenv()
-
 
 
 class AnimeViewer:
@@ -68,7 +40,8 @@ class AnimeViewer:
         barrier_height = self.screen_height - 2 * barrier_size
 
         # Create a frame to contain the main content
-        self.main_frame = tk.Frame(self.master, width=barrier_width, height=barrier_height, bg="#121212")  # Set frame background color
+        self.main_frame = tk.Frame(self.master, width=barrier_width, height=barrier_height,
+                                   bg="#121212")  # Set frame background color
         self.main_frame.place(x=barrier_size, y=barrier_size)
 
         # Display user's avatar and username
@@ -87,37 +60,22 @@ class AnimeViewer:
         # Create a button to refresh anilist data
         self.button = tk.Button(self.master, text="Refresh Anilist", command=self.refresh_anilist)
         self.button.pack(side="top", anchor="ne", pady=20, padx=20)
-        
+
         # Create a button to refresh authentication data
         self.auth_button = tk.Button(self.master, text="Refresh Authentication", command=self.refresh_authentication)
         self.auth_button.pack(side="top", anchor="ne", pady=20, padx=20)
-        
+
         # Create a button to set MPV location
-        self.auth_button = tk.Button(self.master, text="Set MPV location", command=self.mpv_set)
+        self.auth_button = tk.Button(self.master, text="Set MPV location", command=mpv_set)
         self.auth_button.pack(side="top", anchor="ne", pady=20, padx=20)
-
-    def mpv_set(self):
-        file_path = tkinter.filedialog.askopenfilename(filetypes=[("Executable files", "*.exe")])
-        if file_path:
-            # Check if preferences.json exists, if not create an empty one
-            if not os.path.exists("preferences.json"):
-                with open("preferences.json", "w") as file:
-                    json.dump({}, file)
-
-            # Save mpv_location in preferences.json
-            with open("preferences.json", "r+") as file:
-                data = json.load(file)
-                data["mpv_location"] = file_path
-                file.seek(0)
-                json.dump(data, file, indent=4)
 
     def refresh_anilist(self):
         # Start the Anilist refresh process in a separate subprocess
         subprocess.Popen(["python", "api.py"])
-        
+
         # Close the current Tkinter window
         self.master.destroy()
-        
+
         # Reopen the application
         subprocess.Popen(["python", "tanpopo.py"])
 
@@ -126,7 +84,6 @@ class AnimeViewer:
         subprocess.Popen(["python", "auth.py"])
         self.master.destroy()
 
-
     def display_user_info(self):
         # Download user's avatar image
         avatar_url = os.getenv("ANILIST_AVATAR")
@@ -134,13 +91,16 @@ class AnimeViewer:
             response = requests.get(avatar_url)
             if response.status_code == 200:
                 avatar_image = Image.open(BytesIO(response.content))
-                avatar_image = avatar_image.resize((100, 100), resample=Image.BILINEAR)  # Resize image if needed #type: ignore
+                avatar_image = avatar_image.resize((100, 100),
+                                                   resample=Image.BILINEAR)  # Resize image if needed #type: ignore
                 self.user_avatar = ImageTk.PhotoImage(avatar_image)
-                self.avatar_label = tk.Label(self.master, image=self.user_avatar, bg="#121212")  # Set label background color #type: ignore
+                self.avatar_label = tk.Label(self.master, image=self.user_avatar,
+                                             bg="#121212")  # Set label background color #type: ignore
                 self.avatar_label.place(x=20, y=20)  # Position at top left corner
 
                 # Display username
-                self.username_label = tk.Label(self.master, text=f"Hello {os.getenv('ANILIST_USERNAME')}!", bg="#121212", fg="#FFFFFF")  # Set label background and text color
+                self.username_label = tk.Label(self.master, text=f"Hello {os.getenv('ANILIST_USERNAME')}!",
+                                               bg="#121212", fg="#FFFFFF")  # Set label background and text color
                 self.username_label.place(x=20, y=130)  # Adjusted position for username
         else:
             print("please close the window and reopen the app")
@@ -155,7 +115,8 @@ class AnimeViewer:
             return
 
         # Display "Continue Watching" header
-        continue_watching_label = tk.Label(self.main_frame, text="Continue Watching", bg="#121212", fg="#FFFFFF", font=("Helvetica", 25))
+        continue_watching_label = tk.Label(self.main_frame, text="Continue Watching", bg="#121212", fg="#FFFFFF",
+                                           font=("Helvetica", 25))
         continue_watching_label.pack(pady=(50, 20), padx=(100, 100))  # Adjusted padx and pady here
 
         # Display cover images with hover effect and name display
@@ -166,15 +127,18 @@ class AnimeViewer:
                 response = requests.get(cover_url)
                 if response.status_code == 200:
                     cover_image = Image.open(BytesIO(response.content))
-                    cover_image = cover_image.resize((100, 150), resample=Image.BILINEAR) #type: ignore
+                    cover_image = cover_image.resize((100, 150), resample=Image.BILINEAR)  # type: ignore
                     cover_image_tk = ImageTk.PhotoImage(cover_image)
 
                     # Create label for cover image
                     cover_label = HoverLabel(self.main_frame, image=cover_image_tk, bg="#121212")
-                    cover_label.image = cover_image_tk #type: ignore
-                    cover_label.bind("<Enter>", lambda event, name=info["Titles"].get("Romaji"): self.show_name(event, name))
+                    cover_label.image = cover_image_tk  # type: ignore
+                    cover_label.bind("<Enter>",
+                                     lambda event, name=info["Titles"].get("Romaji"): self.show_name(event, name))
                     cover_label.bind("<Leave>", self.hide_name)
-                    cover_label.bind("<Button-1>", lambda event, id=info.get("ID"), anime_info=info: self.choose_episode(id, anime_info))
+                    cover_label.bind("<Button-1>",
+                                     lambda event, id=info.get("ID"), anime_info=info: self.choose_episode(id,
+                                                                                                           anime_info))
                     cover_label.bind("<Motion>", self.move_name)  # Added binding for mouse motion
                     cover_label.pack(side="left", padx=10)
             else:
@@ -294,7 +258,8 @@ class AnimeViewer:
         update_file_location()
 
         # Button to display file location
-        update_location_button = tk.Button(self.episode_frame, text="Display File Location", command=update_file_location)
+        update_location_button = tk.Button(self.episode_frame, text="Display File Location",
+                                           command=update_file_location)
         update_location_button.pack(pady=5)
 
         def play_episode():
@@ -306,7 +271,8 @@ class AnimeViewer:
                 selected_episode = episode_listbox.get(selected_episode_index[0])
                 print(f"Searching for episode: {selected_episode}")
                 # Extract the episode number from the selected episode string
-                selected_episode_number = int(re.search(r'\d+', selected_episode).group())  # type: ignore # Extract episode number and convert to integer
+                selected_episode_number = int(re.search(r'\d+',
+                                                        selected_episode).group())  # type: ignore # Extract episode number and convert to integer
                 print(f"Episode number extracted from selected episode: {selected_episode_number}")
                 # Search for the file in the selected file location
                 with open("series_locations.json", "r") as file:
@@ -319,7 +285,8 @@ class AnimeViewer:
                             # Extract the episode number from the filename
                             file_episode_number_match = re.search(r'\d+', file_name)
                             if file_episode_number_match:
-                                file_episode_number = int(file_episode_number_match.group())  # Extract episode number and convert to integer
+                                file_episode_number = int(
+                                    file_episode_number_match.group())  # Extract episode number and convert to integer
                                 print(f"Episode number extracted from file: {file_episode_number}")
                                 if selected_episode_number == file_episode_number:
                                     file_path = os.path.join(directory, file_name)
@@ -345,11 +312,13 @@ class AnimeViewer:
                     print("Error: MPV location not configured.")
 
         # Create labels for episode information
-        episode_label = tk.Label(self.episode_frame, text="Choose an episode:", bg="#121212", fg="#FFFFFF", font=("Helvetica", 16))
+        episode_label = tk.Label(self.episode_frame, text="Choose an episode:", bg="#121212", fg="#FFFFFF",
+                                 font=("Helvetica", 16))
         episode_label.pack(pady=10)
 
         # Create a Listbox for selecting episodes
-        episode_listbox = tk.Listbox(self.episode_frame, selectmode=tk.SINGLE, bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), width=30)
+        episode_listbox = tk.Listbox(self.episode_frame, selectmode=tk.SINGLE, bg="#121212", fg="#FFFFFF",
+                                     font=("Helvetica", 12), width=30)
         episode_listbox.pack(pady=10, padx=10)
 
         # Populate the Listbox with episode options
@@ -366,15 +335,18 @@ class AnimeViewer:
         anilist_username = os.getenv('ANILIST_USERNAME')
         current_episode, total_episodes = self.fetch_current_episode(anilist_username, anime_id)
         if current_episode is not None:
-            current_episode_label = tk.Label(self.episode_frame, text=f"Current Episode: {current_episode}", bg="#121212", fg="#FFFFFF", font=("Helvetica", 12))
+            current_episode_label = tk.Label(self.episode_frame, text=f"Current Episode: {current_episode}",
+                                             bg="#121212", fg="#FFFFFF", font=("Helvetica", 12))
             current_episode_label.pack(pady=10)
 
         # Display total episodes
         if total_episodes is not None:
-            total_episodes_label = tk.Label(self.episode_frame, text=f"Total Episodes: {total_episodes}", bg="#121212", fg="#FFFFFF", font=("Helvetica", 12))
+            total_episodes_label = tk.Label(self.episode_frame, text=f"Total Episodes: {total_episodes}", bg="#121212",
+                                            fg="#FFFFFF", font=("Helvetica", 12))
             total_episodes_label.pack(pady=10)
         else:
-            error_label = tk.Label(self.episode_frame, text="Error fetching total episodes from AniList.", bg="#121212", fg="#FF0000", font=("Helvetica", 12))
+            error_label = tk.Label(self.episode_frame, text="Error fetching total episodes from AniList.", bg="#121212",
+                                   fg="#FF0000", font=("Helvetica", 12))
             error_label.pack(pady=10)
 
         # Button to play the selected episode
@@ -382,7 +354,8 @@ class AnimeViewer:
         play_button.pack(pady=10)
 
         # Display anime description in the top-right corner
-        description_label = tk.Label(self.episode_frame, text=anime_info.get("Description", ""), bg="#121212", fg="#FFFFFF", font=("Helvetica", 12), wraplength=300)
+        description_label = tk.Label(self.episode_frame, text=anime_info.get("Description", ""), bg="#121212",
+                                     fg="#FFFFFF", font=("Helvetica", 12), wraplength=300)
         description_label.place(relx=1.0, rely=0.0, anchor="ne")
 
         # Back button to return to the main frame
@@ -390,11 +363,14 @@ class AnimeViewer:
         back_button.pack(pady=10)
 
     def show_main_frame(self):
-     self.episode_frame.pack_forget()
-     self.main_frame.pack(fill="both", expand=True)
-     self.avatar_label.place(x=20, y=20)  # Display the avatar label again
-     self.button.pack(side="top", anchor="ne", pady=20, padx=20)  # Ensure the refresh button is packed at the correct position
-     self.auth_button.pack(side="top", anchor="ne", pady=20, padx=20)  # Ensure the authentication button is packed at the correct position
+        self.episode_frame.pack_forget()
+        self.main_frame.pack(fill="both", expand=True)
+        self.avatar_label.place(x=20, y=20)  # Display the avatar label again
+        self.button.pack(side="top", anchor="ne", pady=20,
+                         padx=20)  # Ensure the refresh button is packed at the correct position
+        self.auth_button.pack(side="top", anchor="ne", pady=20,
+                              padx=20)  # Ensure the authentication button is packed at the correct position
+
 
 class HoverLabel(tk.Label):
     def __init__(self, master=None, **kwargs):
@@ -408,6 +384,7 @@ class HoverLabel(tk.Label):
 
     def on_leave(self, event):
         self.config(bg=self.default_bg)
+
 
 # Create a new function to read the file location from series_locations.json
 def read_file_location(anime_id):
@@ -427,6 +404,7 @@ def main():
     root.state('zoomed')  # Set window state to maximized
     app = AnimeViewer(root)
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
