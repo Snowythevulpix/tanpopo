@@ -1,5 +1,7 @@
 import tkinter as tk
 import os
+
+import customtkinter
 import requests
 import json
 from PIL import Image, ImageTk
@@ -9,18 +11,18 @@ import tkinter.filedialog
 import re
 import subprocess
 
+from Authwindow import ToplevelWindow
+from api import entry
+from sub.auth_code import *
 #--------------- Sub-Folder Imports
 from sub.mpv import *
 from sub.check_and_create_files import *
-
+from sub.file_location import *
 
 os.system("cls")
 print("loading Tanpopo... please wait")
 
-
 check_and_create_files()
-
-# Load environment variables from .env file
 load_dotenv()
 
 
@@ -33,6 +35,8 @@ class AnimeViewer:
         # Get screen width and height
         self.screen_width = self.master.winfo_screenwidth()
         self.screen_height = self.master.winfo_screenheight()
+
+        self.toplevel_window = None
 
         # Calculate the size of the barrier
         barrier_size = 50
@@ -69,6 +73,13 @@ class AnimeViewer:
         self.auth_button = tk.Button(self.master, text="Set MPV location", command=mpv_set)
         self.auth_button.pack(side="top", anchor="ne", pady=20, padx=20)
 
+    def open_toplevel(self):
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = ToplevelWindow() # create window if its None or destroyed
+            self.toplevel_window.wm_transient()
+        else:
+            self.toplevel_window.focus()  # if window exists focus it
+
     def refresh_anilist(self):
         # Start the Anilist refresh process in a separate subprocess
         subprocess.Popen(["python", "api.py"])
@@ -81,8 +92,12 @@ class AnimeViewer:
 
     def refresh_authentication(self):
         # Start the authentication refresh process in a separate subprocess
-        subprocess.Popen(["python", "auth.py"])
-        self.master.destroy()
+        #subprocess.Popen(["python", "auth.py"])
+        self.open_toplevel()
+        ToplevelWindow.wait_window(self.toplevel_window)
+        self.master.update()
+
+
 
     def display_user_info(self):
         # Download user's avatar image
@@ -384,18 +399,6 @@ class HoverLabel(tk.Label):
 
     def on_leave(self, event):
         self.config(bg=self.default_bg)
-
-
-# Create a new function to read the file location from series_locations.json
-def read_file_location(anime_id):
-    file_location = None
-    try:
-        with open("series_locations.json", "r") as file:
-            data = json.load(file)
-            file_location = data.get(str(anime_id))
-    except FileNotFoundError:
-        print("series_locations.json not found.")
-    return file_location
 
 
 def main():
