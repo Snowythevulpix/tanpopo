@@ -11,6 +11,8 @@ from sub.auth_code import *
 class ToplevelWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.wm_iconbitmap("./favicon.ico")
+        self.after(201, lambda: self.iconbitmap('favicon.ico'))
         self.geometry("200x140")
         self.minsize(200, 140)
 
