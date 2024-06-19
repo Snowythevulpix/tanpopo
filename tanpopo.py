@@ -13,7 +13,7 @@ import subprocess
 
 from Authwindow import ToplevelWindow
 from api import entry
-from sub.exchange_code_for_token import *
+from sub.auth_code import *
 #--------------- Sub-Folder Imports
 from sub.mpv import *
 from sub.check_and_create_files import *
@@ -75,7 +75,8 @@ class AnimeViewer:
 
     def open_toplevel(self):
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
-            self.toplevel_window = ToplevelWindow()  # create window if its None or destroyed
+            self.toplevel_window = ToplevelWindow() # create window if its None or destroyed
+            self.toplevel_window.wm_transient()
         else:
             self.toplevel_window.focus()  # if window exists focus it
 
@@ -94,7 +95,7 @@ class AnimeViewer:
         #subprocess.Popen(["python", "auth.py"])
         self.open_toplevel()
         ToplevelWindow.wait_window(self.toplevel_window)
-        customtkinter.CTk.update()
+        self.master.update()
 
 
 

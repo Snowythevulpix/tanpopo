@@ -1,6 +1,6 @@
 import requests
 import webbrowser
-from sub.get_user_info import get_user_info
+from sub.user_info import *
 
 CLIENT_ID = '17593'
 CLIENT_SECRET = '5FLMx3yxCAmHqjMCwkb2QTWKqZ2DFBqCOLZxM5iC'
@@ -15,6 +15,7 @@ def get_authorization_code():
         'response_type': 'code'  # Use 'code' for Authorization Code Grant flow
     }
     webbrowser.open_new(auth_url + '?' + '&'.join([f'{key}={value}' for key, value in params.items()]))
+
 
 def exchange_code_for_token(authorization_code):
     token_url = 'https://anilist.co/api/v2/oauth/token'
