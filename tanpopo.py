@@ -3,12 +3,13 @@ import os
 import requests
 import json
 from PIL import Image, ImageTk
-from io import BytesIO
+from io import BytesIO, StringIO
 from dotenv import load_dotenv
 import tkinter.filedialog
 import re
 import subprocess
 import CTkListbox
+import base64
 
 #--------------- Sub-Folder Imports
 from sub.mpv import *
@@ -43,7 +44,44 @@ class AnimeViewer:
         )
         self.main_frame.place(x=barrier_size, y=barrier_size)
 
-        self.display_user_info()
+        #Left and Right Seperation (Avatar, Watching | Buttons)
+        self.top_frame = tk.CTkFrame(self.master, fg_color="#123459")
+        self.top_frame.grid(row=0, sticky="new")
+        self.top_frame.columnconfigure(0, weight=8)  # Column 0 gets 80% of the space
+        self.top_frame.columnconfigure(1, weight=2)
+        self.bottom_frame = tk.CTkFrame(self.master, fg_color="#947436")
+        self.bottom_frame.grid(row=1)
+
+        self.avatar_frame = tk.CTkFrame(self.top_frame, fg_color="#025492")
+        self.avatar_frame.grid(row=0, column=0, pady=15, padx=15, sticky="nw")
+
+        self.button_frame = tk.CTkFrame(self.top_frame, fg_color="#772317", height=555)
+        self.button_frame.grid(row=0, column=1, pady=15, padx=15, sticky="nw")
+
+
+        self.watching_frame = tk.CTkFrame(self.bottom_frame, fg_color="#932547")
+        self.watching_frame.grid(row=1, column=0, pady=15, padx=15, sticky="w")
+        self.watching_frame.rowconfigure(0, weight=3)  # Column 0 gets 80% of the space
+        self.watching_frame.rowconfigure(1, weight=7)
+
+
+        try:
+            #AVATAR
+            self.base64_data = os.getenv("ANILIST_AVATAR_64")
+            decoded_data = base64.b64decode(self.base64_data)
+            self.image = Image.open(BytesIO(decoded_data))
+            self.im = tk.CTkImage(dark_image=self.image, size=(111, 111))
+            self.avatar_label = tk.CTkLabel(self.avatar_frame, image=self.im, fg_color="#121212", text="")
+            self.avatar_label.grid(row=0, column=0, pady=10, padx=10)
+        except:
+            print("Not Logged in to load images")
+
+        self.username_label = tk.CTkLabel(
+            self.avatar_frame,
+            text=f"Hello {os.getenv('ANILIST_USERNAME')}!",
+            fg_color="#121212",
+        )
+        self.username_label.grid(row=1, column=0, padx=10)
 
         if os.path.getsize("media_info.json") == 0:
             os.system("python api.py")
@@ -53,22 +91,16 @@ class AnimeViewer:
         version_text = tk.CTkLabel(self.master, text="ver 0.0.7", text_color="#FFFFFF", fg_color="#121212", padx="10")
         version_text.place(relx=1.0, rely=1.0, anchor="se")
 
-        self.button = tk.CTkButton(
-            self.master, text="Refresh Anilist", command=self.refresh_anilist
-        )
-        self.button.pack(side="top", anchor="ne", pady=20, padx=20)
 
-        self.auth_button = tk.CTkButton(
-            self.master,
-            text="Refresh Authentication",
-            command=self.refresh_authentication,
-        )
-        self.auth_button.pack(side="top", anchor="ne", pady=20, padx=20)
+        #---- Buttons
+        self.button = tk.CTkButton(self.button_frame, text="Refresh Anilist", command=self.refresh_anilist)
+        self.button.grid(row=0, column=0, pady=5, padx=5, sticky="ne", columnspan=2)
 
-        self.mpv_button = tk.CTkButton(
-            self.master, text="Set MPV location", command=mpv_set
-        )
-        self.mpv_button.pack(side="top", anchor="ne", pady=20, padx=20)
+        self.auth_button = tk.CTkButton(self.button_frame, text="Refresh Authentication", command=self.refresh_authentication)
+        self.auth_button.grid(row=1, column=0, pady=5, padx=5, sticky="ne", columnspan=2)
+
+        self.mpv_button = tk.CTkButton(self.button_frame, text="Set MPV location", command=mpv_set)
+        self.mpv_button.grid(row=2, column=0, pady=5, padx=5, sticky="ne")
 
     def open_toplevel(self):
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
@@ -88,28 +120,6 @@ class AnimeViewer:
         ToplevelWindow.wait_window(self.toplevel_window)
         self.master.update()
 
-    def display_user_info(self):
-        avatar_url = os.getenv("ANILIST_AVATAR")
-        if avatar_url:
-            response = requests.get(avatar_url)
-            if response.status_code == 200:
-                avatar_image = Image.open(BytesIO(response.content))
-                avatar_image = avatar_image.resize((100, 100), resample=Image.BILINEAR)
-                self.user_avatar = ImageTk.PhotoImage(avatar_image)
-                self.avatar_label = tk.CTkLabel(
-                    self.master, image=self.user_avatar, fg_color="#121212", text=""
-                )
-                self.avatar_label.place(x=20, y=20)
-
-                self.username_label = tk.CTkLabel(
-                    self.master,
-                    text=f"Hello {os.getenv('ANILIST_USERNAME')}!",
-                    fg_color="#121212",
-                )
-                self.username_label.place(x=20, y=130)
-        else:
-            print("please close the window and reopen the app")
-
     def display_continue_watching(self):
         try:
             with open("media_info.json", "r") as file:
@@ -119,14 +129,15 @@ class AnimeViewer:
             return
 
         continue_watching_label = tk.CTkLabel(
-            self.main_frame,
+            self.watching_frame,
             text="Continue Watching",
             fg_color="#121212",
             font=("Helvetica", 25),
         )
-        continue_watching_label.pack(pady=(50, 20), padx=(100, 100))
-
+        continue_watching_label.grid(row=0, column=1)
+        i = 0
         for info in media_info:
+            i = i+1
             cover_url = info.get("CoverImage")
             if cover_url:
                 response = requests.get(cover_url)
@@ -138,7 +149,7 @@ class AnimeViewer:
                     cover_image_tk = ImageTk.PhotoImage(cover_image)
 
                     cover_label = HoverLabel(
-                        self.main_frame, image=cover_image_tk, fg_color="#121212", text=""
+                        self.watching_frame, image=cover_image_tk, fg_color="#121212", text=""
                     )
                     cover_label.image = cover_image_tk
                     cover_label.bind(
@@ -155,7 +166,7 @@ class AnimeViewer:
                         ), anime_info=info: self.choose_episode(id, anime_info),
                     )
                     cover_label.bind("<Motion>", self.move_name)
-                    cover_label.pack(side="left", padx=10)
+                    cover_label.grid(row=1, column=i)
             else:
                 print(f"No cover image found for {info.get('Title')}.")
 

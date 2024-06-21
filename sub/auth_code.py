@@ -1,5 +1,6 @@
 import requests
 import webbrowser
+import base64
 from sub.user_info import *
 
 CLIENT_ID = '17593'
@@ -39,7 +40,13 @@ def exchange_code_for_token(authorization_code):
                     print("User ID:", user_id)
                     f.write(f"ANILIST_ID={user_id}\n")
                     f.write(f"ANILIST_USERNAME={user_info['name']}\n")
-                    f.write(f"ANILIST_AVATAR={user_info['avatar']['large']}\n")
+                    AVATAR_URL = user_info['avatar']['large']
+                    f.write(f"ANILIST_AVATAR={AVATAR_URL}\n")
+                    response = requests.get(AVATAR_URL)
+                    if response.status_code == 200:
+                        image_data = response.content
+                        base64_data = base64.b64encode(image_data).decode('utf-8')
+                        f.write(f"ANILIST_AVATAR_64={base64_data}\n")
                 else:
                     print("Failed to fetch user info.")
             return access_token
